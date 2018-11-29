@@ -49,6 +49,7 @@ varcomp_fillScale <- scale_fill_manual(values = varcomp_colors)
 #     regions <- c("Brazil", "Ghana", "Peru")
 #     region_colScale = scale_color_brewer(regions, type = "qual", palette = "Set1")
 
+# Functions ####
 
 library(gridExtra)
 # from http://www.sthda.com/english/wiki/ggplot2-easy-way-to-mix-multiple-graphs-on-the-same-page-r-software-and-data-visualization
@@ -94,21 +95,17 @@ set_df_coltypes <- function (df, col_types) {
     # Function to set column types in dataframes.  col_types is a character vector or a dataframe whose column types you want to duplicate.
     # col_types is recycled if ncol(df) > length(col_types)
 
-    coerce_fun = list (
-        "character"   = `as.character`,
-        "factor"      = `as.factor`,
-        "numeric"     = `as.numeric`,
-        "integer"     = `as.integer`,
-        "POSIXct"     = `as.POSIXct`,
-        "logical"     = `as.logical`,
-        "date"        = `as.Date` )
-
     if (class(col_types) == "data.frame") {
         col_types = unlist(lapply(col_types, class))
     }
 
     for (i in 1:length(df)) {
-        df[,i] = coerce_fun[[ col_types[(i-1) %% length(col_types) + 1] ]]( df[,i] ) #apply coerce function
+        if (any(class(df) == "tbl"))
+            invec = pull(df, i)
+        else
+            invec = df[,i]
+        #df[,i] = coerce_fun[[ col_types[(i-1) %% length(col_types) + 1] ]]( df[,i] ) #apply coerce function
+        df[,i] = coerce(invec, col_types[(i-1) %% length(col_types) + 1])
     }
     #lapply(coerce_fun, `[`, col_types) #list of functions to apply
     return(df)
@@ -252,46 +249,6 @@ xlate_col_names <- function(col_names_xlate, col_names, old_dataf) {
     }
     colnames(new_dataf) = col_names
     return(new_dataf)
-}
-
-read_site_data <- function(gemtraits_misc_version = F) {
-    if (gemtraits_misc_version) {
-        gemtraits_misc = switch(system('hostname', intern=T),
-                                "ouce39-131" = "D:/Documents/Chambasa/gemtraits_misc/",
-                                "Allie-PC" = "D:/Documents/Chambasa/Data/gemtraits_misc/")
-        site_desc = read.csv(paste(gemtraits_misc, "site_description/Chambasa_StudySiteDescription_11Aug15.csv", sep=""), stringsAsFactors = F)
-        names(site_desc) = c("plot_code", "lat", "long", "ele", "slope", "aspect", "rad", "temp", "precip", "soil_m", "veg_height", "biom", "soil_type", "p_tot", "n_tot", "c_tot")
-    } else {
-        data_dir = switch(system('hostname', intern=T),
-                          "dont_even_look" = "C:/Users/ashenkin/Documents/Chambasa/Data/R/Data/",
-                          "ouce39-131" = "D:/Documents/Chambasa/chambasa_allie/Data/",
-                          "Allie-PC" = "D:/Documents/Chambasa/Data/R/Data/")
-        site_desc = read.csv(paste(data_dir, "plot_metadata/StudySiteDescription_GEMTraits.csv", sep=""), stringsAsFactors = F)
-        names(site_desc) = c("region","plot_code", "lat", "long", "x_utm", "y_utm", "ele", "slope", "aspect",
-                             "canopy_height","canopy_height_sd", "canopy_shape_p_h", "gap_size_lambda",
-                             "rad", "temp", "precip", "soil_m", "veg_height",
-                             "biom", "n_stems", "ba", "mean_chambasa_tree_height", "soil_type", "p_tot", "n_tot", "c_tot", "sand_pct", "clay_pct", "eco_class", "eco_desc", "expt", "note", "region_order", "overall_order", "order2", "fire_affected", "large_herbivores")
-        site_desc$eco_class = ordered(site_desc$eco_class, levels = c("Savanna", "Transitional", "TMCF", "TF"))
-        site_desc$plot_code = factor(site_desc$plot_code, levels = site_desc$plot_code[order(site_desc$overall_order)])
-        site_desc$plot_code2 = factor(site_desc$plot_code, levels = site_desc$plot_code[order(site_desc$order2)])
-    }
-    return(site_desc)
-}
-
-read_carbon_data <- function() {
-    synthesis_dir = switch(system('hostname', intern=T),
-                           "ouce39-131" = "D:/Documents/Chambasa/chambasa_allie/Analysis/synthesis/",
-                           "Allie-PC" = "D:/Documents/Chambasa/Data/R/Analysis/synthesis/")
-    # Carbon plots from Yadvinder's Table 2
-    carbon_wb = loadWorkbook(paste0(synthesis_dir, "external_data/Table2.xlsx"))
-    carbon_data = readWorksheet(carbon_wb, "for_synthesis_plot")
-    names_temp = carbon_data$Metric
-    carbon_data = data.frame(t(carbon_data)[-1,], stringsAsFactors = F)
-    names(carbon_data) = names_temp; rm(names_temp)
-    rownames(carbon_data) = sub("\\.","",rownames(carbon_data))
-    carbon_data = set_df_coltypes(carbon_data, "numeric")
-    carbon_data$site = rownames(carbon_data)
-    return(carbon_data)
 }
 
 clean_plot_codes <- function(plot_codes) {
