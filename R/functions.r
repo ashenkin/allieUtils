@@ -840,3 +840,4 @@ cowplot_labels <- function(len) {
     ret = sub("(.*)","\\(\\1\\)",ret)
     return(ret)
 }
+
