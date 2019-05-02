@@ -630,60 +630,6 @@ myround <- function(x, digits=1) {
     tmp
 }
 
-import_glopnet <- function() {
-    library("XLConnect")
-    glopnet_dir = switch(system('hostname', intern=T),
-                         "ouce39-131" = "D:/Documents - BTSync/Databases/GLOPNET/",
-                         "Allie-PC" = "D:/Documents/Databases/GLOPNET/")
-    wb = loadWorkbook(paste0(glopnet_dir, "nature02403-s2.xls"))
-    glopnet = readWorksheet(wb, sheet = 1, startRow = 11, check.names = T)
-    return(glopnet)
-}
-
-get_try_traits <- function(traits = NA, with_categ = T, with_site = T) {
-    # for now, traits should be a vector of integers pointing to TraitID in the TRY dataset
-    library("XLConnect")
-    library("plyr")
-    library("data.table")
-    try_dir = switch(system('hostname', intern=T),
-                     "ouce39-131" = "D:/Documents - BTSync/Databases/TRY/",
-                     "Allie-PC" = "D:/Documents/Databases/TRY/")
-    try_traits = fread(paste0(try_dir,"1431.txt"), sep = "\t")
-    if (with_site) {
-        try_sites = fread(paste0(try_dir, "TRY30_site_climate_soil_2015_02_18.csv"))
-        try_traits = merge(try_traits, try_sites[,.(ObservationID, LAT_site, LON_site)], by = "ObservationID", all.x=TRUE)
-    }
-    if (with_categ) {
-        try_categ = fread(paste0(try_dir, "TRY_Categorical_Traits_Lookup_Table_2012_03_17_TestRelease.csv"))
-        try_traits = merge(try_traits, try_categ[, c(1,6:ncol(try_categ)), with=F], by = "AccSpeciesID", all.x=TRUE)
-    }
-    try_traits = data.frame(try_traits)
-    if (is.na(traits)) {
-        return( data.frame(try_traits) )
-    } else {
-        return( data.frame(try_traits[TraitID %in% traits]) )
-    }
-}
-
-import_baad <- function() {
-    baad_dir = switch(system('hostname', intern=T),
-                      "ouce39-131" = "D:/Documents - BTSync/Databases/baad archive/baad_data/",
-                      "Allie-PC" = "D:/Documents/Databases/baad archive/baad_data/")
-    baad = read.csv(paste0(baad_dir,"baad_data.csv"), stringsAsFactors = F)
-    return(baad)
-}
-
-import_global_wd_db <- function() {
-    library("XLConnect")
-    gwdd_dir = switch(system('hostname', intern=T),
-                      "ouce39-131" = "D:/Documents - BTSync/Databases/Global Wood Density Database/",
-                      "Allie-PC" = "D:/Documents/Databases/Global Wood Density Database/")
-    wb = loadWorkbook(paste0(gwdd_dir, "GlobalWoodDensityDatabase.xls"))
-    gwdd = readWorksheet(wb, sheet = "Data", header=T, check.names = T)
-    names(gwdd)[4] = "wd"
-    return(gwdd)
-}
-
 species_mean_trait <- function(species, trait, return_all_species = T) {
     library(plyr)
     trait_df = data.frame(species = species, trait = trait)
