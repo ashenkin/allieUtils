@@ -787,3 +787,24 @@ cowplot_labels <- function(len) {
     return(ret)
 }
 
+#' @title list directories to depth of n
+#'
+#' @param p path
+#' @param n number of directories to traverse down (as in find's maxdepth)
+#'
+#' @return vector of directory names
+#' @export
+#' @details from https://stackoverflow.com/questions/48297440/list-files-recursive-up-to-a-certain-level-in-r
+#'
+#' @examples
+#' list.dirs.depth.n(".", n = 3)
+
+list.dirs.depth.n <- function(p, n) {
+    res <- list.dirs(p, recursive = FALSE)
+    if (n > 1) {
+        add <- list.dirs.depth.n(res, n-1)
+        c(res, add)
+    } else {
+        res
+    }
+}
